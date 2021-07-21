@@ -68,6 +68,7 @@ function TCPOptions() {
 
 TCPOptions.prototype.decode = function (raw_packet, offset, len) {
     var end_offset = offset + len;
+    this.opStr = '';
 
     while (offset < end_offset) {
         switch (raw_packet[offset]) {
@@ -76,20 +77,24 @@ TCPOptions.prototype.decode = function (raw_packet, offset, len) {
             break;
         case 1: // NOP / padding
             offset += 1;
+            this.opStr += 'N';
             break;
         case 2:
             offset += 2;
             this.mss = raw_packet.readUInt16BE(offset);
             offset += 2;
+            this.opStr += 'M';
             break;
         case 3:
             offset += 2;
             this.window_scale = raw_packet[offset];
             offset += 1;
+            this.opStr += 'W';
             break;
         case 4:
             this.sack_ok = true;
             offset += 2;
+            this.opStr += 'O';
             break;
         case 5:
             this.sack = [];
@@ -131,6 +136,7 @@ TCPOptions.prototype.decode = function (raw_packet, offset, len) {
                 console.log("Invalid TCP SACK option length " + raw_packet[offset + 1]);
                 offset = end_offset;
             }
+            this.opStr += 'S';
             break;
         case 8:
             offset += 2;
@@ -138,6 +144,7 @@ TCPOptions.prototype.decode = function (raw_packet, offset, len) {
             offset += 4;
             this.echo = raw_packet.readUInt32BE(offset);
             offset += 4;
+            this.opStr += 'T';
             break;
         case 254:
         case 255:
@@ -145,6 +152,7 @@ TCPOptions.prototype.decode = function (raw_packet, offset, len) {
             //however, the first byte is the length of the option (including
             //the 1 byte kind, and 1 byte of length.) So skip over option.
             offset += raw_packet.readUInt8(offset + 1);
+            this.opStr += 'E';
             break;
         default:
             throw new Error("Don't know how to process TCP option " + raw_packet[offset]);
