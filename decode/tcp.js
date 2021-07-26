@@ -74,6 +74,7 @@ TCPOptions.prototype.decode = function (raw_packet, offset, len) {
         switch (raw_packet[offset]) {
         case 0: // end of options list
             offset = end_offset;
+            this.opStr += 'E';
             break;
         case 1: // NOP / padding
             offset += 1;
@@ -152,10 +153,13 @@ TCPOptions.prototype.decode = function (raw_packet, offset, len) {
             //however, the first byte is the length of the option (including
             //the 1 byte kind, and 1 byte of length.) So skip over option.
             offset += raw_packet.readUInt8(offset + 1);
-            this.opStr += 'E';
+            this.opStr += 'X';
             break;
         default:
-            throw new Error("Don't know how to process TCP option " + raw_packet[offset]);
+            // avoid failing due to an unkown or bad formed packet, just stop reading
+            this.opStr += 'U';
+            offset = end_offset;
+            // throw new Error("Don't know how to process TCP option " + raw_packet[offset]);
         }
     }
 
